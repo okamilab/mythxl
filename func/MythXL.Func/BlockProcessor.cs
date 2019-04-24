@@ -26,9 +26,6 @@ namespace MythXL.Func
                 .AddEnvironmentVariables()
                 .Build();
 
-            string msg = JsonConvert.SerializeObject(new BlockMessage { Id = message.Id + 1 });
-            await blockQueue.AddMessageAsync(new CloudQueueMessage(msg));
-
             var web3 = new Web3(config.GetValue<string>("Blockchain:Endpoint"));
             var block = await web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(message.Id));
 
@@ -42,7 +39,8 @@ namespace MythXL.Func
                     }
 
                     var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(tx.TransactionHash);
-                    string cMsg = JsonConvert.SerializeObject(new ContractMessage {
+                    string cMsg = JsonConvert.SerializeObject(new ContractMessage
+                    {
                         Address = receipt.ContractAddress,
                         TxHash = tx.TransactionHash
                     });
