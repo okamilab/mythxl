@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "functions": [ "BlockProcessor", "BlockEnqueuer" ],
+  "functions": [ "BlockProcessor" ],
   "extensions": {
     "queues": {
       "batchSize": 1,
