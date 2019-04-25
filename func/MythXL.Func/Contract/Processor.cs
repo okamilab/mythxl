@@ -7,9 +7,9 @@ using Nethereum.Web3;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace MythXL.Func
+namespace MythXL.Func.Contract
 {
-    public static class ContractProcessor
+    public static class Processor
     {
         [FunctionName("ContractProcessor")]
         public static async Task Run(

@@ -8,9 +8,9 @@ using Nethereum.Web3;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace MythXL.Func
+namespace MythXL.Func.Block
 {
-    public static class BlockProcessor
+    public static class Processor
     {
         [FunctionName("BlockProcessor")]
         public static async Task Run(

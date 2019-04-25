@@ -8,9 +8,9 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MythXL.Func
+namespace MythXL.Func.Analyses
 {
-    public static class AnalysesProcessor
+    public static class Processor
     {
         [FunctionName("AnalysesProcessor")]
         public static async Task Run(

@@ -8,9 +8,9 @@ using Newtonsoft.Json;
 using Microsoft.WindowsAzure.Storage.Queue;
 using MythXL.Func.Models;
 
-namespace MythXL.Func
+namespace MythXL.Func.Block
 {
-    public static class BlockEnqueuer
+    public static class Enqueuer
     {
         [FunctionName("BlockEnqueuer")]
         public static async Task<IActionResult> Run(
