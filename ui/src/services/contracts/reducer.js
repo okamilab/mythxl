@@ -1,6 +1,7 @@
 import {
   CONTRACTS_REQUEST,
   CONTRACTS_RECEIVE,
+  CONTRACTS_INVALIDATE
 } from './actions';
 
 export const initialState = {
@@ -24,6 +25,12 @@ export default function reduce(state = initialState, action) {
         items: [...state.items, ...action.items],
         next: action.next
       });
+    case CONTRACTS_INVALIDATE: {
+      return Object.assign({}, state, {
+        didInvalidate: true,
+        items: []
+      });
+    }
     default:
       return state;
   }

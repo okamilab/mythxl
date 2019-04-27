@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
-import { withJob } from 'react-jobs';
 import withStyles from '@material-ui/core/styles/withStyles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -15,10 +14,12 @@ import Button from '@material-ui/core/Button';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import { ExpandLess, ExpandMore, CallMade, Done, Error } from '@material-ui/icons';
 
-import { fetchContracts } from './../actions';
+import Loader from './../../../components/Loader';
+import { fetchContractsIfNeeded, fetchContracts } from './../actions';
 import { fetchAnalyses } from './../../analyses/actions';
 import angry from './../../../images/emoticon-angry-outline.svg';
 import neutral from './../../../images/emoticon-neutral-outline.svg';
+import Filter from './../components/Filter';
 import AnalysesDetails from './../../analyses/components/Details';
 
 const styles = theme => ({
@@ -40,6 +41,12 @@ const styles = theme => ({
   },
   mt3: {
     marginTop: theme.spacing.unit * 2
+  },
+  404: {
+    margin: 200,
+    fontSize: 78,
+    fontWeight: 700,
+    color: '#ebebeb'
   }
 });
 
@@ -52,6 +59,16 @@ class Contracts extends React.Component {
     };
 
     this.openInfoClick = this.openInfoClick.bind(this);
+  }
+
+  componentDidMount() {
+    const { dispatch, match } = this.props;
+    dispatch(fetchContractsIfNeeded(null, match.params.filter));
+  }
+
+  componentDidUpdate() {
+    const { dispatch, match } = this.props;
+    dispatch(fetchContractsIfNeeded(null, match.params.filter));
   }
 
   openInfoClick = (index) => {
@@ -67,10 +84,24 @@ class Contracts extends React.Component {
   };
 
   render() {
-    const { items, itemsMap, next, classes, dispatch } = this.props;
+    const { isFetching, items, itemsMap, next, classes, dispatch, match } = this.props;
+
+    if (isFetching && !items.length) {
+      return <Loader />
+    }
+
+    if (!items || !items.length) {
+      return (
+        <>
+          <Filter />
+          <Typography align='center' className={classes[404]}>0x194</Typography>
+        </>
+      )
+    }
 
     return (
       <>
+        <Filter />
         <List>
           {items.map((x, i) => {
             const analyses = itemsMap[`${x.partitionKey}|${x.analyzeUUID}`];
@@ -94,7 +125,7 @@ class Contracts extends React.Component {
                   } />
                   {this.state.open[i] ? <ExpandLess /> : <ExpandMore />}
                 </ListItem >
-                <Collapse in={this.state.open[i]} timeout="auto" unmountOnExit>
+                <Collapse in={this.state.open[i]} timeout='auto' unmountOnExit>
                   <Grid container spacing={24} className={classes.info}>
                     <Grid item xs={5}>
                       <Typography noWrap>Analyses status: {x.analyzeStatus}</Typography>
@@ -104,7 +135,7 @@ class Contracts extends React.Component {
                       <Typography noWrap>Code: {x.code}</Typography>
                     </Grid>
                     <Grid item xs={1} className={classes.text_right}>
-                      <a href={'https://etherscan.io/address/' + x.partitionKey} target="_blank" rel="noopener noreferrer">
+                      <a href={'https://etherscan.io/address/' + x.partitionKey} target='_blank' rel='noopener noreferrer'>
                         <CallMade />
                       </a>
                     </Grid>
@@ -112,7 +143,7 @@ class Contracts extends React.Component {
                   {
                     analyses ?
                       <AnalysesDetails data={analyses} /> :
-                      <LinearProgress color="primary" variant="query" />
+                      <LinearProgress color='primary' variant='query' />
                   }
                 </Collapse>
               </React.Fragment>
@@ -121,7 +152,7 @@ class Contracts extends React.Component {
         </List>
         <div className={classes.text_center}>
           {next ? <Button onClick={() => {
-            dispatch(fetchContracts(next));
+            dispatch(fetchContracts(next, match.params.filter));
           }} className={classes.w100}>Load more</Button> : null}
         </div>
       </>
@@ -131,6 +162,7 @@ class Contracts extends React.Component {
 
 Contracts.propTypes = {
   dispatch: PropTypes.func.isRequired,
+  location: PropTypes.object,
   classes: PropTypes.object.isRequired,
   items: PropTypes.array.isRequired,
   itemsMap: PropTypes.object,
@@ -148,11 +180,6 @@ export default compose(
       itemsMap: {}
     };
     return { isFetching, items, next, itemsMap };
-  }),
-  withJob({
-    work: ({ dispatch }) => dispatch(fetchContracts()),
-    LoadingComponent: () => <div>Loading...</div>,
-    error: function Error() { return <p>Error</p>; },
   }),
   withStyles(styles)
 )(Contracts);

@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 
 import Layout from './components/Layout';
 import Contracts from './services/contracts/pages/Contracts';
+import NotFound from './components/NotFound';
 
 export default function App() {
   return (
@@ -12,6 +13,8 @@ export default function App() {
       <Layout>
         <Switch>
           <Route exact path='/' component={Contracts} />
+          <Route exact path='/:filter' component={Contracts} />
+          <Route exact path='**' component={NotFound} />
         </Switch>
       </Layout>
     </React.Fragment>
