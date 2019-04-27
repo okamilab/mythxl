@@ -37,6 +37,9 @@ const styles = theme => ({
   },
   w100: {
     width: '100%'
+  },
+  mt3: {
+    marginTop: theme.spacing.unit * 2
   }
 });
 
@@ -74,7 +77,7 @@ class Contracts extends React.Component {
 
             return (
               <React.Fragment key={i}>
-                <ListItem button onClick={() => this.openInfoClick(i)}>
+                <ListItem button onClick={() => this.openInfoClick(i)} className={classes.mt3}>
                   <ListItemIcon>
                     {
                       x.analyzeStatus === 'Error' ?

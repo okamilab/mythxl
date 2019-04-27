@@ -14,7 +14,6 @@ const styles = theme => ({
 });
 
 function Details({ data, classes }) {
-  console.log(JSON.stringify(JSON.parse(data.issues),null,2))
   return (
     <Grid container spacing={24}>
       <Grid item xs={8}>
@@ -24,6 +23,7 @@ function Details({ data, classes }) {
             label="Error"
             defaultValue={data.error}
             className={classes.textField}
+            error
             multiline
             fullWidth
             InputProps={{
