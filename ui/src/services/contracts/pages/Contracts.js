@@ -9,16 +9,17 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import Collapse from '@material-ui/core/Collapse';
-import ErrorIcon from '@material-ui/icons/Error';
-import DoneIcon from '@material-ui/icons/Done';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import { ExpandLess, ExpandMore, CallMade } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
+import LinearProgress from '@material-ui/core/LinearProgress';
+import { ExpandLess, ExpandMore, CallMade, Done, Error } from '@material-ui/icons';
 
 import { fetchContracts } from './../actions';
+import { fetchAnalyses } from './../../analyses/actions';
 import angry from './../../../images/emoticon-angry-outline.svg';
 import neutral from './../../../images/emoticon-neutral-outline.svg';
+import AnalysesDetails from './../../analyses/components/Details';
 
 const styles = theme => ({
   info: {
@@ -33,6 +34,9 @@ const styles = theme => ({
   img: {
     height: 20,
     paddingLeft: 8
+  },
+  w100: {
+    width: '100%'
   }
 });
 
@@ -48,24 +52,34 @@ class Contracts extends React.Component {
   }
 
   openInfoClick = (index) => {
+    const { items, itemsMap, dispatch } = this.props;
+    const item = items[index];
+    const id = `${item.partitionKey}|${item.analyzeUUID}`;
+
+    if (!this.state.open[index] && !itemsMap[id]) {
+      dispatch(fetchAnalyses(id));
+    }
+
     this.setState({ open: { ...this.state.open, [index]: !this.state.open[index] } });
   };
 
   render() {
-    const { items, next, classes, dispatch } = this.props;
+    const { items, itemsMap, next, classes, dispatch } = this.props;
 
     return (
       <>
         <List>
           {items.map((x, i) => {
+            const analyses = itemsMap[`${x.partitionKey}|${x.analyzeUUID}`];
+
             return (
               <React.Fragment key={i}>
                 <ListItem button onClick={() => this.openInfoClick(i)}>
                   <ListItemIcon>
                     {
                       x.analyzeStatus === 'Error' ?
-                        <ErrorIcon titleAccess={x.analyzeStatus} /> :
-                        <DoneIcon titleAccess={x.analyzeStatus} />
+                        <Error titleAccess={x.analyzeStatus} /> :
+                        <Done titleAccess={x.analyzeStatus} />
                     }
                   </ListItemIcon>
                   <ListItemText primary={
@@ -92,6 +106,11 @@ class Contracts extends React.Component {
                       </a>
                     </Grid>
                   </Grid>
+                  {
+                    analyses ?
+                      <AnalysesDetails data={analyses} /> :
+                      <LinearProgress color="primary" variant="query" />
+                  }
                 </Collapse>
               </React.Fragment>
             );
@@ -100,7 +119,7 @@ class Contracts extends React.Component {
         <div className={classes.text_center}>
           {next ? <Button onClick={() => {
             dispatch(fetchContracts(next));
-          }}>Load more</Button> : null}
+          }} className={classes.w100}>Load more</Button> : null}
         </div>
       </>
     );
@@ -111,6 +130,7 @@ Contracts.propTypes = {
   dispatch: PropTypes.func.isRequired,
   classes: PropTypes.object.isRequired,
   items: PropTypes.array.isRequired,
+  itemsMap: PropTypes.object,
   next: PropTypes.string
 };
 
@@ -121,7 +141,10 @@ export default compose(
       items: [],
       next: ''
     };
-    return { isFetching, items, next };
+    const { itemsMap } = state.analyses || {
+      itemsMap: {}
+    };
+    return { isFetching, items, next, itemsMap };
   }),
   withJob({
     work: ({ dispatch }) => dispatch(fetchContracts()),
