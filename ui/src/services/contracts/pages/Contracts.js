@@ -10,9 +10,9 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Collapse from '@material-ui/core/Collapse';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import { ExpandLess, ExpandMore, CallMade, Done, Error } from '@material-ui/icons';
+import InfiniteScroll from 'react-infinite-scroller';
 
 import Loader from './../../../components/Loader';
 import { fetchContractsIfNeeded, fetchContracts } from './../actions';
@@ -102,59 +102,63 @@ class Contracts extends React.Component {
     return (
       <>
         <Filter />
-        <List>
-          {items.map((x, i) => {
-            const analyses = itemsMap[`${x.partitionKey}|${x.analyzeUUID}`];
+        <InfiniteScroll
+          loadMore={async (a) => {
+            if (isFetching) return;
+            await dispatch(fetchContracts(next, match.params.filter));
+          }}
+          hasMore={!!next}
+          loader={<LinearProgress color='primary' variant='query' key={0} />}
+        >
+          <List>
+            {items.map((x, i) => {
+              const analyses = itemsMap[`${x.partitionKey}|${x.analyzeUUID}`];
 
-            return (
-              <React.Fragment key={i}>
-                <ListItem button onClick={() => this.openInfoClick(i)} className={classes.mt3}>
-                  <ListItemIcon>
+              return (
+                <React.Fragment key={i}>
+                  <ListItem button onClick={() => this.openInfoClick(i)} className={classes.mt3}>
+                    <ListItemIcon>
+                      {
+                        x.analyzeStatus === 'Error' ?
+                          <Error titleAccess={x.analyzeStatus} /> :
+                          <Done titleAccess={x.analyzeStatus} />
+                      }
+                    </ListItemIcon>
+                    <ListItemText primary={
+                      <Typography noWrap>
+                        {x.partitionKey}
+                        {x.severity === 'Medium' ? <img src={neutral} alt={x.severity} className={classes.img} /> : null}
+                        {x.severity === 'High' ? <img src={angry} alt={x.severity} className={classes.img} /> : null}
+                      </Typography>
+                    } />
+                    {this.state.open[i] ? <ExpandLess /> : <ExpandMore />}
+                  </ListItem >
+                  <Collapse in={this.state.open[i]} timeout='auto' unmountOnExit>
+                    <Grid container spacing={24} className={classes.info}>
+                      <Grid item xs={5}>
+                        <Typography noWrap>Analyses status: {x.analyzeStatus}</Typography>
+                        <Typography noWrap>Severity: {x.severity || '-'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography noWrap>Code: {x.code}</Typography>
+                      </Grid>
+                      <Grid item xs={1} className={classes.text_right}>
+                        <a href={'https://etherscan.io/address/' + x.partitionKey} target='_blank' rel='noopener noreferrer'>
+                          <CallMade />
+                        </a>
+                      </Grid>
+                    </Grid>
                     {
-                      x.analyzeStatus === 'Error' ?
-                        <Error titleAccess={x.analyzeStatus} /> :
-                        <Done titleAccess={x.analyzeStatus} />
+                      analyses ?
+                        <AnalysesDetails data={analyses} /> :
+                        <LinearProgress color='primary' variant='query' />
                     }
-                  </ListItemIcon>
-                  <ListItemText primary={
-                    <Typography noWrap>
-                      {x.partitionKey}
-                      {x.severity === 'Medium' ? <img src={neutral} alt={x.severity} className={classes.img} /> : null}
-                      {x.severity === 'High' ? <img src={angry} alt={x.severity} className={classes.img} /> : null}
-                    </Typography>
-                  } />
-                  {this.state.open[i] ? <ExpandLess /> : <ExpandMore />}
-                </ListItem >
-                <Collapse in={this.state.open[i]} timeout='auto' unmountOnExit>
-                  <Grid container spacing={24} className={classes.info}>
-                    <Grid item xs={5}>
-                      <Typography noWrap>Analyses status: {x.analyzeStatus}</Typography>
-                      <Typography noWrap>Severity: {x.severity || '-'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography noWrap>Code: {x.code}</Typography>
-                    </Grid>
-                    <Grid item xs={1} className={classes.text_right}>
-                      <a href={'https://etherscan.io/address/' + x.partitionKey} target='_blank' rel='noopener noreferrer'>
-                        <CallMade />
-                      </a>
-                    </Grid>
-                  </Grid>
-                  {
-                    analyses ?
-                      <AnalysesDetails data={analyses} /> :
-                      <LinearProgress color='primary' variant='query' />
-                  }
-                </Collapse>
-              </React.Fragment>
-            );
-          })}
-        </List>
-        <div className={classes.text_center}>
-          {next ? <Button onClick={() => {
-            dispatch(fetchContracts(next, match.params.filter));
-          }} className={classes.w100}>Load more</Button> : null}
-        </div>
+                  </Collapse>
+                </React.Fragment>
+              );
+            })}
+          </List>
+        </InfiniteScroll>
       </>
     );
   }
