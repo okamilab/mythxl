@@ -1,0 +1,10 @@
+{
+  "version": "2.0",
+  "functions": [ "BlockProcessor", "ContractPoisonProcessor", "GetContracts", "GetAnalyses" ],
+  "extensions": {
+    "queues": {
+      "batchSize": 1,
+      "maxDequeueCount": 5
+    }
+  }
+}
