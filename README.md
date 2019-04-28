@@ -1,2 +1,2 @@
-# mythxl
-MythXL is a tool for analyzing contracts via MythX on mainnet
+# MythXL
+MythXL is open security platform for smart contracts powered by MythX

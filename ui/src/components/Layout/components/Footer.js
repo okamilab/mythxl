@@ -15,7 +15,7 @@ function Footer({ classes }) {
   return (
     <div className={classes.footer}>
       <Typography noWrap>
-        MythXL is a tool for analyzing contracts via MythX on Ethereum mainnet
+        MythXL is open security platform for smart contracts powered by MythX | <a href='https://github.com/aquiladev/mythxl'>GitHub</a>
       </Typography>
     </div>
   );
