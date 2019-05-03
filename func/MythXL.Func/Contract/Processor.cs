@@ -1,10 +1,12 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using MythXL.Func.Models;
 using Nethereum.Web3;
 using Newtonsoft.Json;
+using System;
 using System.Threading.Tasks;
 
 namespace MythXL.Func.Contract
@@ -38,15 +40,40 @@ namespace MythXL.Func.Contract
             }
 
             var analyses = await client.AnalyzeAsync(code);
+            await WriteBlob(
+                config.GetValue<string>("Storage:Connection"),
+                config.GetValue<string>("Storage:ContractContainer"),
+                message.Address,
+                code);
+            await WriteBlob(
+                config.GetValue<string>("Storage:Connection"),
+                config.GetValue<string>("Storage:AnalysesContainer"),
+                message.Address,
+                analyses);
 
             string msg = JsonConvert.SerializeObject(new AnalysesMessage
             {
                 Address = message.Address,
                 TxHash = message.TxHash,
-                Bytecode = code,
-                Result = analyses
+                Version = 1
             });
             await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg));
+        }
+
+        private static async Task WriteBlob(string connection, string container, string blobName, string content)
+        {
+            if (string.IsNullOrEmpty(content))
+            {
+                throw new ArgumentNullException(nameof(content), $"Connection: {connection}, Container: {container}, BlobName: {blobName}");
+            }
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connection);
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var blobContainer = blobClient.GetContainerReference(container);
+            await blobContainer.CreateIfNotExistsAsync();
+
+            var cloudBlockBlob = blobContainer.GetBlockBlobReference(blobName);
+            await cloudBlockBlob.UploadTextAsync(content);
         }
     }
 }

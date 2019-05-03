@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
+using System;
 
 namespace MythXL.Func.Entities
 {
@@ -6,6 +7,7 @@ namespace MythXL.Func.Entities
     {
         public string TxHash { get; set; }
 
+        [Obsolete("Deprecated in entity version 1")]
         public string Code { get; set; }
 
         public string AnalyzeUUID { get; set; }
@@ -13,5 +15,7 @@ namespace MythXL.Func.Entities
         public string AnalyzeStatus { get; set; }
 
         public string Severity { get; set; }
+
+        public int Version { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Func.Entities;
 using MythXL.Func.Models;
@@ -33,7 +34,7 @@ namespace MythXL.Func.Analyses
 
             string issues = null;
             string severity = null;
-            var result = JsonConvert.DeserializeObject<AnalysesResult>(message.Result);
+            var result = GetResult(config, message).Result;
             if (result.Status == "Finished")
             {
                 issues = await client.GetIssuesAsync(result.UUID);
@@ -45,7 +46,26 @@ namespace MythXL.Func.Analyses
             }
 
             await InsertAnalyses(analysesTable, message.Address, result, issues);
+            await WriteContractCode(config, message.Address, message.Bytecode);
             await InsertContract(contractTable, message, result, severity);
+        }
+
+        private static async Task<AnalysesResult> GetResult(IConfigurationRoot config, AnalysesMessage message)
+        {
+            if (message.Version == 0)
+            {
+                return JsonConvert.DeserializeObject<AnalysesResult>(message.Result);
+            }
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(config.GetValue<string>("Storage:Connection"));
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var blobContainer = blobClient.GetContainerReference(config.GetValue<string>("Storage:AnalysesContainer"));
+            await blobContainer.CreateIfNotExistsAsync();
+
+            var cloudBlockBlob = blobContainer.GetBlockBlobReference(message.Address);
+            var content = await cloudBlockBlob.DownloadTextAsync();
+
+            return JsonConvert.DeserializeObject<AnalysesResult>(content);
         }
 
         private static async Task InsertAnalyses(CloudTable table, string address, AnalysesResult analyses, string issues)
@@ -66,8 +86,24 @@ namespace MythXL.Func.Analyses
                 SubmittedBy = analyses.SubmittedBy,
                 Issues = issues
             };
-            TableOperation insertOperation = TableOperation.Insert(entry);
+            TableOperation insertOperation = TableOperation.InsertOrReplace(entry);
             await table.ExecuteAsync(insertOperation);
+        }
+
+        private static async Task WriteContractCode(IConfigurationRoot config, string blobName, string content)
+        {
+            if (string.IsNullOrEmpty(content))
+            {
+                return;
+            }
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(config.GetValue<string>("Storage:Connection"));
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var blobContainer = blobClient.GetContainerReference(config.GetValue<string>("Storage:ContractContainer"));
+            await blobContainer.CreateIfNotExistsAsync();
+
+            var cloudBlockBlob = blobContainer.GetBlockBlobReference(blobName);
+            await cloudBlockBlob.UploadTextAsync(content);
         }
 
         private static async Task InsertContract(CloudTable table, AnalysesMessage message, AnalysesResult analyses, string severity)
@@ -77,12 +113,12 @@ namespace MythXL.Func.Analyses
                 PartitionKey = message.Address,
                 RowKey = "",
                 TxHash = message.TxHash,
-                Code = message.Bytecode,
                 AnalyzeUUID = analyses.UUID,
                 AnalyzeStatus = analyses.Status,
-                Severity = severity
+                Severity = severity,
+                Version = 1
             };
-            TableOperation insertOperation = TableOperation.Insert(entry);
+            TableOperation insertOperation = TableOperation.InsertOrReplace(entry);
             await table.ExecuteAsync(insertOperation);
         }
     }
