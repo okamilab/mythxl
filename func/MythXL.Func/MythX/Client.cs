@@ -6,14 +6,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MythXL.Func
+namespace MythXL.Func.MythX
 {
-    public class MythXClient
+    public class Client
     {
         internal readonly HttpClient _client;
+        private string _address;
 
-        public MythXClient(string baseUrl, string address, string pwd)
+        public Client(string baseUrl, string address, string pwd)
         {
+            _address = address;
             _client = new HttpClient();
             _client.BaseAddress = new Uri(baseUrl);
             var token = GetToken(baseUrl, address, pwd).Result;
@@ -23,11 +25,15 @@ namespace MythXL.Func
         public async Task<string> AnalyzeAsync(string bytecode)
         {
             var serializedData = JsonConvert.SerializeObject(
-                    new { data = new { bytecode }, clientToolName = "MythXL" },
-                    new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                new { data = new { bytecode }, clientToolName = "MythXL" },
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             var content = new StringContent(serializedData, Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync("/v1/analyses", content);
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                throw new AccountLimitExceedException(_address);
+            }
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadAsStringAsync();

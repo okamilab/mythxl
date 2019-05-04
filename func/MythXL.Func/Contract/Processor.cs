@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using MythXL.Func.Models;
+using MythXL.Func.MythX;
 using Nethereum.Web3;
 using Newtonsoft.Json;
 using System;
@@ -28,18 +29,14 @@ namespace MythXL.Func.Contract
 
             var web3 = new Web3(config.GetValue<string>("Blockchain:Endpoint"));
             var code = await web3.Eth.GetCode.SendRequestAsync(message.Address);
-
-            var client = new MythXClient(
-                config.GetValue<string>("MythX:BaseUrl"),
-                config.GetValue<string>("MythX:Address"),
-                config.GetValue<string>("MythX:Password"));
-
             if (string.IsNullOrEmpty(code) || code == "0x")
             {
                 return;
             }
 
-            var analyses = await client.AnalyzeAsync(code);
+            var policy = new AnalysesExecutionPolicy(config);
+            var analyses = await policy.AnalyzeAsync(code);
+
             await WriteBlob(
                 config.GetValue<string>("Storage:Connection"),
                 config.GetValue<string>("Storage:ContractContainer"),
@@ -55,7 +52,8 @@ namespace MythXL.Func.Contract
             {
                 Address = message.Address,
                 TxHash = message.TxHash,
-                Version = 1
+                Account = policy.Account,
+                Version = 2
             });
             await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg));
         }
