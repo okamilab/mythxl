@@ -3,7 +3,6 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MythXL.Func.MythX
@@ -36,38 +35,20 @@ namespace MythXL.Func.MythX
             }
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadAsStringAsync();
-            var analysesResponse = JsonConvert.DeserializeObject<AnalysesResponse>(result);
-
-            var analyses = "";
-            while (true)
-            {
-                analyses = await GetAnalyzeAsync(analysesResponse.UUID);
-                try
-                {
-                    var res = JsonConvert.DeserializeObject<AnalysesResponse>(analyses);
-                    if (res.Status == "Error" || res.Status == "Finished")
-                    {
-                        break;
-                    }
-                }
-                catch (Exception) { }
-
-                Thread.Sleep(2000);
-            }
-
-            return analyses;
+            return await response.Content.ReadAsStringAsync();
         }
 
         public async Task<string> GetIssuesAsync(string uuid)
         {
             var response = await _client.GetAsync($"/v1/analyses/{uuid}/issues");
+            response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }
 
-        private async Task<string> GetAnalyzeAsync(string uuid)
+        public async Task<string> GetAnalysesAsync(string uuid)
         {
             var response = await _client.GetAsync($"/v1/analyses/{uuid}");
+            response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -99,7 +80,5 @@ namespace MythXL.Func.MythX
     class AnalysesResponse
     {
         public string UUID { get; set; }
-
-        public string Status { get; set; }
     }
 }

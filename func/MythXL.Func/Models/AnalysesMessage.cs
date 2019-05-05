@@ -8,11 +8,7 @@ namespace MythXL.Func.Models
 
         public string TxHash { get; set; }
 
-        [Obsolete("Deprecated in message version 1")]
-        public string Bytecode { get; set; }
-
-        [Obsolete("Deprecated in message version 1")]
-        public string Result { get; set; }
+        public string AnalysesId { get; set; }
 
         public string Account { get; set; }
 

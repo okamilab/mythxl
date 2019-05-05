@@ -1,13 +1,12 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using MythXL.Func.Models;
 using MythXL.Func.MythX;
+using MythXL.Func.Utils;
 using Nethereum.Web3;
 using Newtonsoft.Json;
-using System;
 using System.Threading.Tasks;
 
 namespace MythXL.Func.Contract
@@ -36,42 +35,23 @@ namespace MythXL.Func.Contract
 
             var policy = new AnalysesExecutionPolicy(config);
             var analyses = await policy.AnalyzeAsync(code);
+            var response = JsonConvert.DeserializeObject<AnalysesResponse>(analyses);
 
-            await WriteBlob(
+            await Blob.Write(
                 config.GetValue<string>("Storage:Connection"),
                 config.GetValue<string>("Storage:ContractContainer"),
                 message.Address,
                 code);
-            await WriteBlob(
-                config.GetValue<string>("Storage:Connection"),
-                config.GetValue<string>("Storage:AnalysesContainer"),
-                message.Address,
-                analyses);
 
             string msg = JsonConvert.SerializeObject(new AnalysesMessage
             {
                 Address = message.Address,
                 TxHash = message.TxHash,
                 Account = policy.Account,
+                AnalysesId = response.UUID,
                 Version = 2
             });
             await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg));
-        }
-
-        private static async Task WriteBlob(string connection, string container, string blobName, string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                throw new ArgumentNullException(nameof(content), $"Connection: {connection}, Container: {container}, BlobName: {blobName}");
-            }
-
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connection);
-            var blobClient = storageAccount.CreateCloudBlobClient();
-            var blobContainer = blobClient.GetContainerReference(container);
-            await blobContainer.CreateIfNotExistsAsync();
-
-            var cloudBlockBlob = blobContainer.GetBlockBlobReference(blobName);
-            await cloudBlockBlob.UploadTextAsync(content);
         }
     }
 }

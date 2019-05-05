@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using MythXL.Func.Models;
 using System;
 using System.Collections.Generic;
 
@@ -23,6 +24,11 @@ namespace MythXL.Func.MythX
         public int Count()
         {
             return _addresses.Count;
+        }
+
+        public int IndexOf(string address)
+        {
+            return _addresses.IndexOf(address);
         }
 
         public string GetPassword(string key)
@@ -50,19 +56,6 @@ namespace MythXL.Func.MythX
             }
 
             return Get(index);
-        }
-    }
-
-    public class Account
-    {
-        public string Address { get; private set; }
-
-        public string Password { get; private set; }
-
-        internal Account(string address, string password)
-        {
-            Address = address;
-            Password = password;
         }
     }
 }

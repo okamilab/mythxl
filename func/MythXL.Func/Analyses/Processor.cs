@@ -1,12 +1,14 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Func.Entities;
 using MythXL.Func.Models;
 using MythXL.Func.MythX;
+using MythXL.Func.Utils;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,6 +19,7 @@ namespace MythXL.Func.Analyses
         [FunctionName("AnalysesProcessor")]
         public static async Task Run(
             [QueueTrigger("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] AnalysesMessage message,
+            [Queue("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] CloudQueue analysesQueue,
             [Table("%Storage:ContractTable%", Connection = "Storage:Connection")] CloudTable contractTable,
             [Table("%Storage:AnalysesTable%", Connection = "Storage:Connection")] CloudTable analysesTable,
             ILogger log,
@@ -28,12 +31,21 @@ namespace MythXL.Func.Analyses
                 .AddEnvironmentVariables()
                 .Build();
 
+            var client = GetClient(config, message);
+            var analyses = await client.GetAnalysesAsync(message.AnalysesId);
+            var result = JsonConvert.DeserializeObject<AnalysesResult>(analyses);
+            if (result.Status != "Error" && result.Status != "Finished")
+            {
+                string msg = JsonConvert.SerializeObject(message);
+                var visibilityDelay = TimeSpan.FromMinutes(4);
+                await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg), null, visibilityDelay, null, null);
+                return;
+            }
+
             string issues = null;
             string severity = null;
-            var result = GetResult(config, message).Result;
             if (result.Status == "Finished")
             {
-                var client = GetClient(config, message);
                 issues = await client.GetIssuesAsync(result.UUID);
 
                 var list = JsonConvert.DeserializeObject<List<AnalysesIssueResult>>(issues);
@@ -43,8 +55,12 @@ namespace MythXL.Func.Analyses
                 }
             }
 
+            await Blob.Write(
+                config.GetValue<string>("Storage:Connection"),
+                config.GetValue<string>("Storage:AnalysesContainer"),
+                message.Address,
+                analyses);
             await InsertAnalyses(analysesTable, message.Address, result, issues);
-            await WriteContractCode(config, message.Address, message.Bytecode);
             await InsertContract(contractTable, message, result, severity);
         }
 
@@ -58,28 +74,9 @@ namespace MythXL.Func.Analyses
                     config.GetValue<string>("MythX:Password"));
             }
 
-            var creds = new AccountManager(config);
-            var password = creds.GetPassword(message.Account);
+            var accounts = new AccountManager(config);
+            var password = accounts.GetPassword(message.Account);
             return new Client(config.GetValue<string>("MythX:BaseUrl"), message.Account, password);
-        }
-
-        private static async Task<AnalysesResult> GetResult(IConfigurationRoot config, AnalysesMessage message)
-        {
-            // TODO: remove fetching result
-            if (message.Version == 0)
-            {
-                return JsonConvert.DeserializeObject<AnalysesResult>(message.Result);
-            }
-
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(config.GetValue<string>("Storage:Connection"));
-            var blobClient = storageAccount.CreateCloudBlobClient();
-            var blobContainer = blobClient.GetContainerReference(config.GetValue<string>("Storage:AnalysesContainer"));
-            await blobContainer.CreateIfNotExistsAsync();
-
-            var cloudBlockBlob = blobContainer.GetBlockBlobReference(message.Address);
-            var content = await cloudBlockBlob.DownloadTextAsync();
-
-            return JsonConvert.DeserializeObject<AnalysesResult>(content);
         }
 
         private static async Task InsertAnalyses(CloudTable table, string address, AnalysesResult analyses, string issues)
@@ -102,23 +99,6 @@ namespace MythXL.Func.Analyses
             };
             TableOperation insertOperation = TableOperation.InsertOrReplace(entry);
             await table.ExecuteAsync(insertOperation);
-        }
-
-        // TODO: remove code writing
-        private static async Task WriteContractCode(IConfigurationRoot config, string blobName, string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                return;
-            }
-
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(config.GetValue<string>("Storage:Connection"));
-            var blobClient = storageAccount.CreateCloudBlobClient();
-            var blobContainer = blobClient.GetContainerReference(config.GetValue<string>("Storage:ContractContainer"));
-            await blobContainer.CreateIfNotExistsAsync();
-
-            var cloudBlockBlob = blobContainer.GetBlockBlobReference(blobName);
-            await cloudBlockBlob.UploadTextAsync(content);
         }
 
         // TODO: transform all contracts with zero version
