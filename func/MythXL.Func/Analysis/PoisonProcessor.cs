@@ -6,14 +6,14 @@ using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
 
-namespace MythXL.Func.Analyses
+namespace MythXL.Func.Analysis
 {
     public static class PoisonProcessor
     {
-        [FunctionName("AnalysesPoisonProcessor")]
+        [FunctionName("AnalysisPoisonProcessor")]
         public static async Task Run(
-            [QueueTrigger("%Storage:AnalysesPoisonQueue%", Connection = "Storage:Connection")] AnalysesMessage message,
-            [Queue("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] CloudQueue contractQueue,
+            [QueueTrigger("%Storage:AnalysisPoisonQueue%", Connection = "Storage:Connection")] AnalysisMessage message,
+            [Queue("%Storage:AnalysisQueue%", Connection = "Storage:Connection")] CloudQueue contractQueue,
             ILogger log)
         {
             string msg = JsonConvert.SerializeObject(message);

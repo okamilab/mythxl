@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MythXL.Func.MythX
 {
-    public class AnalysesExecutionPolicy
+    public class AnalysisExecutionPolicy
     {
         private CloudTable _table;
         private string _stateKey;
@@ -19,7 +19,7 @@ namespace MythXL.Func.MythX
         private readonly IConfigurationRoot _config;
         private readonly ILogger _log;
 
-        public AnalysesExecutionPolicy(IConfigurationRoot config, ILogger log)
+        public AnalysisExecutionPolicy(IConfigurationRoot config, ILogger log)
         {
             _config = config;
             _log = log;

@@ -16,7 +16,7 @@ namespace MythXL.Func.Contract
         [FunctionName("ContractProcessor")]
         public static async Task Run(
             [QueueTrigger("%Storage:ContractQueue%", Connection = "Storage:Connection")] ContractMessage message,
-            [Queue("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] CloudQueue analysesQueue,
+            [Queue("%Storage:AnalysisQueue%", Connection = "Storage:Connection")] CloudQueue analysisQueue,
             ILogger log,
             ExecutionContext context)
         {
@@ -33,9 +33,9 @@ namespace MythXL.Func.Contract
                 return;
             }
 
-            var policy = new AnalysesExecutionPolicy(config, log);
-            var analyses = await policy.AnalyzeAsync(code);
-            var response = JsonConvert.DeserializeObject<AnalysesResponse>(analyses);
+            var policy = new AnalysisExecutionPolicy(config, log);
+            var analysis = await policy.AnalyzeAsync(code);
+            var response = JsonConvert.DeserializeObject<AnalysisResponse>(analysis);
 
             await Blob.Write(
                 config.GetValue<string>("Storage:Connection"),
@@ -43,15 +43,15 @@ namespace MythXL.Func.Contract
                 message.Address,
                 code);
 
-            string msg = JsonConvert.SerializeObject(new AnalysesMessage
+            string msg = JsonConvert.SerializeObject(new AnalysisMessage
             {
                 Address = message.Address,
                 TxHash = message.TxHash,
                 Account = policy.Account,
-                AnalysesId = response.UUID,
+                AnalysisId = response.UUID,
                 Version = 2
             });
-            await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg));
+            await analysisQueue.AddMessageAsync(new CloudQueueMessage(msg));
         }
     }
 }

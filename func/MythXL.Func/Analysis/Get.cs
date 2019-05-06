@@ -9,14 +9,14 @@ using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Func.Entities;
 using MythXL.Func.Utils;
 
-namespace MythXL.Func.Analyses
+namespace MythXL.Func.Analysis
 {
     public static class Get
     {
         [FunctionName("GetAnalyses")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v0.1/analyses")] HttpRequest req,
-            [Table("%Storage:AnalysesTable%", Connection = "Storage:Connection")] CloudTable table,
+            [Table("%Storage:AnalysisTable%", Connection = "Storage:Connection")] CloudTable table,
             ILogger log,
             ExecutionContext context)
         {
@@ -43,7 +43,7 @@ namespace MythXL.Func.Analyses
             var partKey = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, args[0]);
             var rowKey = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, args[1]);
 
-            var query = new TableQuery<AnalysesEntity>
+            var query = new TableQuery<AnalysisEntity>
             {
                 TakeCount = 10,
                 FilterString = TableQuery.CombineFilters(partKey, TableOperators.And, rowKey)

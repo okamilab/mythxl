@@ -45,7 +45,7 @@ namespace MythXL.Func.MythX
             return await response.Content.ReadAsStringAsync();
         }
 
-        public async Task<string> GetAnalysesAsync(string uuid)
+        public async Task<string> GetAnalysisAsync(string uuid)
         {
             var response = await _client.GetAsync($"/v1/analyses/{uuid}");
             response.EnsureSuccessStatusCode();
@@ -77,7 +77,7 @@ namespace MythXL.Func.MythX
         public string Access { get; set; }
     }
 
-    class AnalysesResponse
+    class AnalysisResponse
     {
         public string UUID { get; set; }
     }

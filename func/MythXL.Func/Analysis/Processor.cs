@@ -12,16 +12,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MythXL.Func.Analyses
+namespace MythXL.Func.Analysis
 {
     public static class Processor
     {
-        [FunctionName("AnalysesProcessor")]
+        [FunctionName("AnalysisProcessor")]
         public static async Task Run(
-            [QueueTrigger("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] AnalysesMessage message,
-            [Queue("%Storage:AnalysesQueue%", Connection = "Storage:Connection")] CloudQueue analysesQueue,
+            [QueueTrigger("%Storage:AnalysisQueue%", Connection = "Storage:Connection")] AnalysisMessage message,
+            [Queue("%Storage:AnalysisQueue%", Connection = "Storage:Connection")] CloudQueue analysisQueue,
             [Table("%Storage:ContractTable%", Connection = "Storage:Connection")] CloudTable contractTable,
-            [Table("%Storage:AnalysesTable%", Connection = "Storage:Connection")] CloudTable analysesTable,
+            [Table("%Storage:AnalysisTable%", Connection = "Storage:Connection")] CloudTable analysisTable,
             ILogger log,
             ExecutionContext context)
         {
@@ -32,13 +32,13 @@ namespace MythXL.Func.Analyses
                 .Build();
 
             var client = GetClient(config, message);
-            var analyses = await client.GetAnalysesAsync(message.AnalysesId);
-            var result = JsonConvert.DeserializeObject<AnalysesResult>(analyses);
+            var analysis = await client.GetAnalysisAsync(message.AnalysisId);
+            var result = JsonConvert.DeserializeObject<AnalysisResult>(analysis);
             if (result.Status != "Error" && result.Status != "Finished")
             {
                 string msg = JsonConvert.SerializeObject(message);
                 var visibilityDelay = TimeSpan.FromMinutes(4);
-                await analysesQueue.AddMessageAsync(new CloudQueueMessage(msg), null, visibilityDelay, null, null);
+                await analysisQueue.AddMessageAsync(new CloudQueueMessage(msg), null, visibilityDelay, null, null);
                 return;
             }
 
@@ -48,7 +48,7 @@ namespace MythXL.Func.Analyses
             {
                 issues = await client.GetIssuesAsync(result.UUID);
 
-                var list = JsonConvert.DeserializeObject<List<AnalysesIssueResult>>(issues);
+                var list = JsonConvert.DeserializeObject<List<AnalysisIssueResult>>(issues);
                 if (list.Count > 0 && list[0] != null && list[0].Issues != null && list[0].Issues.Count > 0)
                 {
                     severity = list[0].Issues[0].Severity;
@@ -57,14 +57,14 @@ namespace MythXL.Func.Analyses
 
             await Blob.Write(
                 config.GetValue<string>("Storage:Connection"),
-                config.GetValue<string>("Storage:AnalysesContainer"),
+                config.GetValue<string>("Storage:AnalysisContainer"),
                 message.Address,
-                analyses);
-            await InsertAnalyses(analysesTable, message.Address, result, issues);
+                analysis);
+            await InsertAnalysis(analysisTable, message.Address, result, issues);
             await InsertContract(contractTable, message, result, severity);
         }
 
-        private static Client GetClient(IConfigurationRoot config, AnalysesMessage message)
+        private static Client GetClient(IConfigurationRoot config, AnalysisMessage message)
         {
             if (message.Version <= 1)
             {
@@ -79,22 +79,22 @@ namespace MythXL.Func.Analyses
             return new Client(config.GetValue<string>("MythX:BaseUrl"), message.Account, password);
         }
 
-        private static async Task InsertAnalyses(CloudTable table, string address, AnalysesResult analyses, string issues)
+        private static async Task InsertAnalysis(CloudTable table, string address, AnalysisResult analysis, string issues)
         {
-            var entry = new AnalysesEntity()
+            var entry = new AnalysisEntity()
             {
                 PartitionKey = address,
-                RowKey = analyses.UUID,
-                ApiVersion = analyses.ApiVersion,
-                Error = analyses.Error,
-                HarveyVersion = analyses.HarveyVersion,
-                MaestroVersion = analyses.MaestroVersion,
-                MaruVersion = analyses.MythrilVersion,
-                QueueTime = analyses.QueueTime,
-                RunTime = analyses.RunTime,
-                Status = analyses.Status,
-                SubmittedAt = analyses.SubmittedAt,
-                SubmittedBy = analyses.SubmittedBy,
+                RowKey = analysis.UUID,
+                ApiVersion = analysis.ApiVersion,
+                Error = analysis.Error,
+                HarveyVersion = analysis.HarveyVersion,
+                MaestroVersion = analysis.MaestroVersion,
+                MaruVersion = analysis.MythrilVersion,
+                QueueTime = analysis.QueueTime,
+                RunTime = analysis.RunTime,
+                Status = analysis.Status,
+                SubmittedAt = analysis.SubmittedAt,
+                SubmittedBy = analysis.SubmittedBy,
                 Issues = issues
             };
             TableOperation insertOperation = TableOperation.InsertOrReplace(entry);
@@ -102,15 +102,15 @@ namespace MythXL.Func.Analyses
         }
 
         // TODO: transform all contracts with zero version
-        private static async Task InsertContract(CloudTable table, AnalysesMessage message, AnalysesResult analyses, string severity)
+        private static async Task InsertContract(CloudTable table, AnalysisMessage message, AnalysisResult analysis, string severity)
         {
             var entry = new ContractEntity()
             {
                 PartitionKey = message.Address,
                 RowKey = "",
                 TxHash = message.TxHash,
-                AnalyzeUUID = analyses.UUID,
-                AnalyzeStatus = analyses.Status,
+                AnalyzeUUID = analysis.UUID,
+                AnalyzeStatus = analysis.Status,
                 Severity = severity,
                 Version = 1
             };

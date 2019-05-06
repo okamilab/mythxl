@@ -2,7 +2,7 @@
 
 namespace MythXL.Func.Entities
 {
-    public class AnalysesEntity : TableEntity
+    public class AnalysisEntity : TableEntity
     {
         public string ApiVersion { get; set; }
 

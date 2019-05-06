@@ -2,7 +2,7 @@
 
 namespace MythXL.Func.Models
 {
-    public class AnalysesIssueResult
+    public class AnalysisIssueResult
     {
         public List<Issue> Issues { get; set; }
     }

@@ -47,11 +47,11 @@ namespace MythXL.Func.Contract
                 filter = string.IsNullOrEmpty(filter) ? severityFilter : TableQuery.CombineFilters(filter, TableOperators.And, severityFilter);
             }
 
-            var analysesParam = (string)req.Query["a"];
-            if (!string.IsNullOrEmpty(analysesParam))
+            var analysisParam = (string)req.Query["a"];
+            if (!string.IsNullOrEmpty(analysisParam))
             {
-                var analysesFilter = TableQuery.GenerateFilterCondition("AnalyzeStatus", QueryComparisons.Equal, analysesParam);
-                filter = string.IsNullOrEmpty(filter) ? analysesFilter : TableQuery.CombineFilters(filter, TableOperators.And, analysesFilter);
+                var analysisFilter = TableQuery.GenerateFilterCondition("AnalyzeStatus", QueryComparisons.Equal, analysisParam);
+                filter = string.IsNullOrEmpty(filter) ? analysisFilter : TableQuery.CombineFilters(filter, TableOperators.And, analysisFilter);
             }
 
             var query = new TableQuery<ContractEntity> { TakeCount = 10, FilterString = filter };
