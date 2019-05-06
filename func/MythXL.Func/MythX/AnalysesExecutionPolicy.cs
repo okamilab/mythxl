@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Func.Entities;
@@ -16,10 +17,13 @@ namespace MythXL.Func.MythX
 
         private readonly string _url;
         private readonly IConfigurationRoot _config;
+        private readonly ILogger _log;
 
-        public AnalysesExecutionPolicy(IConfigurationRoot config)
+        public AnalysesExecutionPolicy(IConfigurationRoot config, ILogger log)
         {
             _config = config;
+            _log = log;
+
             _url = _config.GetValue<string>("MythX:BaseUrl");
 
             _table = CreateTable(
@@ -43,9 +47,11 @@ namespace MythXL.Func.MythX
                     var client = new Client(_url, account.Address, account.Password);
                     return await client.AnalyzeAsync(code);
                 }
-                catch (AccountLimitExceedException)
+                catch (AccountLimitExceedException ex)
                 {
+                    _log.LogDebug($"Account limit exceeded {ex.Address}");
                     account = accounts.Next(account.Address);
+                    _log.LogDebug($"Switched to {account.Address}");
                     await SetAccount(account.Address);
                     attempts++;
                 }

@@ -33,7 +33,7 @@ namespace MythXL.Func.Contract
                 return;
             }
 
-            var policy = new AnalysesExecutionPolicy(config);
+            var policy = new AnalysesExecutionPolicy(config, log);
             var analyses = await policy.AnalyzeAsync(code);
             var response = JsonConvert.DeserializeObject<AnalysesResponse>(analyses);
 
