@@ -27,7 +27,8 @@ namespace MythXL.Func.Contract
                 .Build();
 
             var web3 = new Web3(config.GetValue<string>("Blockchain:Endpoint"));
-            var code = await web3.Eth.GetCode.SendRequestAsync(message.Address);
+            var tx = await web3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(message.TxHash);
+            var code = tx.Input;
             if (string.IsNullOrEmpty(code) || code == "0x")
             {
                 return;
@@ -39,7 +40,7 @@ namespace MythXL.Func.Contract
 
             await Blob.Write(
                 config.GetValue<string>("Storage:Connection"),
-                config.GetValue<string>("Storage:ContractContainer"),
+                config.GetValue<string>("Storage:ContractInputContainer"),
                 message.Address,
                 code);
 

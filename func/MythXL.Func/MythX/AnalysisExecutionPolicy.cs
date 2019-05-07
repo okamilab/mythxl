@@ -22,7 +22,7 @@ namespace MythXL.Func.MythX
             _log = log;
 
             _url = _config.GetValue<string>("MythX:BaseUrl");
-            _selectedAccountKey = config.GetValue<string>("MythX:AccountManager:SelectedAccount");
+            _selectedAccountKey = config.GetValue<string>("MythXL:AccountManager:SelectedAccount");
             _stateManager = new StateManager(config);
         }
 

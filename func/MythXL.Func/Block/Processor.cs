@@ -27,7 +27,7 @@ namespace MythXL.Func.Block
                 .Build();
 
             var web3 = new Web3(config.GetValue<string>("Blockchain:Endpoint"));
-            var block = await web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(message.Id));
+            var block = await web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(message.Block));
 
             if (block.Transactions.Length > 0)
             {

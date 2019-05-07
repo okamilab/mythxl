@@ -2,6 +2,6 @@
 {
     public class BlockMessage
     {
-        public int Id { get; set; }
+        public int Block { get; set; }
     }
 }

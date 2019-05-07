@@ -1,12 +1,14 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Microsoft.WindowsAzure.Storage.Queue;
 using MythXL.Func.Models;
+using MythXL.Func.Utils;
+using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace MythXL.Func.Block
 {
@@ -16,22 +18,31 @@ namespace MythXL.Func.Block
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
             [Queue("%Storage:BlockQueue%", Connection = "Storage:Connection")] CloudQueue blockQueue,
-            ILogger log)
+            ILogger log,
+            ExecutionContext context)
         {
-            var numberParam = req.Query["number"];
-            var number = int.Parse(numberParam);
-            if (number <= 0)
-            {
-                return new BadRequestObjectResult("Number should be grater then zero");
-            }
+            IConfigurationRoot config = new ConfigurationBuilder()
+                .SetBasePath(context.FunctionAppDirectory)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
 
-            for (var i = 0; i < 100000; i++)
+            var lastBlockKey = config.GetValue<string>("MythXL:BlockEnqueuer:LastBlock");
+            var stateManager = new StateManager(config);
+            var state = await stateManager.GetValueAsync(lastBlockKey);
+            var lastBlock = int.Parse(state.Value);
+
+            var batchSize = 100;
+            for (var i = 0; i < batchSize; i++)
             {
-                string msg = JsonConvert.SerializeObject(new BlockMessage { Id = number + i });
+                string msg = JsonConvert.SerializeObject(new BlockMessage { Block = lastBlock + i });
                 await blockQueue.AddMessageAsync(new CloudQueueMessage(msg));
             }
 
-            return new OkObjectResult("");
+            lastBlock = lastBlock + batchSize;
+            await stateManager.SetValueAsync(lastBlockKey, lastBlock.ToString());
+
+            return new OkObjectResult(lastBlock);
         }
     }
 }

@@ -101,7 +101,6 @@ namespace MythXL.Func.Analysis
             await table.ExecuteAsync(insertOperation);
         }
 
-        // TODO: transform all contracts with zero version
         private static async Task InsertContract(CloudTable table, AnalysisMessage message, AnalysisResult analysis, string severity)
         {
             var entry = new ContractEntity()
@@ -109,8 +108,8 @@ namespace MythXL.Func.Analysis
                 PartitionKey = message.Address,
                 RowKey = "",
                 TxHash = message.TxHash,
-                AnalyzeUUID = analysis.UUID,
-                AnalyzeStatus = analysis.Status,
+                AnalysisId = analysis.UUID,
+                AnalysisStatus = analysis.Status,
                 Severity = severity,
                 Version = 1
             };

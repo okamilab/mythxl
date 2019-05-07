@@ -10,9 +10,9 @@ namespace MythXL.Func.Entities
         [Obsolete("Deprecated in entity version 1")]
         public string Code { get; set; }
 
-        public string AnalyzeUUID { get; set; }
+        public string AnalysisId { get; set; }
 
-        public string AnalyzeStatus { get; set; }
+        public string AnalysisStatus { get; set; }
 
         public string Severity { get; set; }
 
