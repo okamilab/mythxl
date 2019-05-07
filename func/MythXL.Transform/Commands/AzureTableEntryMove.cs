@@ -5,7 +5,7 @@ using System;
 
 namespace MythXL.Transform.Commands
 {
-    [Verb("az-te-move", HelpText = "Move storage table entry to another table.")]
+    [Verb("az-te-move", HelpText = "Moves storage table entities to another table.")]
     public class AzureTableEntryMoveOptions
     {
         [Option('c', "connection-string", Required = true, HelpText = "Connection string to Azure Storage.")]
@@ -32,6 +32,7 @@ namespace MythXL.Transform.Commands
 
             while (true)
             {
+                // NOTE: TableEntity is parrent type, didn't check how it moves custom fields
                 var query = new TableQuery<TableEntity> { TakeCount = options.BatchSize };
                 var segment = fromTable.ExecuteQuerySegmentedAsync(query, null).Result;
                 if (segment.Results.Count == 0)

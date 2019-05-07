@@ -7,10 +7,10 @@ namespace MythXL.Transform
     {
         static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<AzureTableEntryMoveOptions, TestOptions>(args)
+            Parser.Default.ParseArguments<AzureTableEntryMoveOptions, MigrateContractV1Options>(args)
                 .MapResult(
                     (AzureTableEntryMoveOptions opts) => AzureTableEntryMove.RunAddAndReturnExitCode(opts),
-                    (TestOptions opts) => Test.RunAddAndReturnExitCode(opts),
+                    (MigrateContractV1Options opts) => MigrateContractV1.RunAddAndReturnExitCode(opts),
                     errs => 1);
         }
     }
