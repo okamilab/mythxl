@@ -6,20 +6,22 @@ namespace MythXL.Func.Utils
 {
     internal static class Blob
     {
-        public static async Task Write(string connection, string container, string blobName, string content)
+        public static async Task Write(string connection, string containerName, string blobName, string content)
         {
             if (string.IsNullOrEmpty(content))
             {
-                throw new ArgumentNullException(nameof(content), $"Connection: {connection}, Container: {container}, BlobName: {blobName}");
+                throw new ArgumentNullException(
+                    nameof(content),
+                    $"Connection: {connection}, Container: {containerName}, BlobName: {blobName}");
             }
 
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connection);
-            var blobClient = storageAccount.CreateCloudBlobClient();
-            var blobContainer = blobClient.GetContainerReference(container);
-            await blobContainer.CreateIfNotExistsAsync();
+            var client = storageAccount.CreateCloudBlobClient();
+            var container = client.GetContainerReference(containerName);
+            await container.CreateIfNotExistsAsync();
 
-            var cloudBlockBlob = blobContainer.GetBlockBlobReference(blobName);
-            await cloudBlockBlob.UploadTextAsync(content);
+            var blockBlob = container.GetBlockBlobReference(blobName);
+            await blockBlob.UploadTextAsync(content);
         }
     }
 }
