@@ -74,7 +74,7 @@ class Contracts extends React.Component {
   openInfoClick = (index) => {
     const { items, itemsMap, dispatch } = this.props;
     const item = items[index];
-    const id = `${item.partitionKey}|${item.analyzeUUID}`;
+    const id = `${item.partitionKey}|${item.analysisId}`;
 
     if (!this.state.open[index] && !itemsMap[id]) {
       dispatch(fetchAnalyses(id));
@@ -112,16 +112,16 @@ class Contracts extends React.Component {
         >
           <List>
             {items.map((x, i) => {
-              const analyses = itemsMap[`${x.partitionKey}|${x.analyzeUUID}`];
+              const analyses = itemsMap[`${x.partitionKey}|${x.analysisId}`];
 
               return (
                 <React.Fragment key={i}>
                   <ListItem button onClick={() => this.openInfoClick(i)} className={classes.mt3}>
                     <ListItemIcon>
                       {
-                        x.analyzeStatus === 'Error' ?
-                          <Error titleAccess={x.analyzeStatus} /> :
-                          <Done titleAccess={x.analyzeStatus} />
+                        x.analysisStatus === 'Error' ?
+                          <Error titleAccess={x.analysisStatus} /> :
+                          <Done titleAccess={x.analysisStatus} />
                       }
                     </ListItemIcon>
                     <ListItemText primary={
@@ -136,11 +136,11 @@ class Contracts extends React.Component {
                   <Collapse in={this.state.open[i]} timeout='auto' unmountOnExit>
                     <Grid container spacing={24} className={classes.info}>
                       <Grid item xs={5}>
-                        <Typography noWrap>Analyses status: {x.analyzeStatus}</Typography>
+                        <Typography noWrap>Analyses status: {x.analysisStatus}</Typography>
                         <Typography noWrap>Severity: {x.severity || '-'}</Typography>
                       </Grid>
                       <Grid item xs={6}>
-                        <Typography noWrap>Code: {x.code}</Typography>
+                        {x.code ? <Typography noWrap>Code: {x.code}</Typography> : null}
                       </Grid>
                       <Grid item xs={1} className={classes.text_right}>
                         <a href={'https://etherscan.io/address/' + x.partitionKey} target='_blank' rel='noopener noreferrer'>
