@@ -2,6 +2,8 @@
 {
     public class AnalysisModel
     {
+        public string Id { get; set; }
+
         public string ApiVersion { get; set; }
 
         public string Error { get; set; }

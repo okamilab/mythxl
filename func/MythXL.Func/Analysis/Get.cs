@@ -37,6 +37,7 @@ namespace MythXL.Func.Analysis
                 {
                     list.Add(new AnalysisModel
                     {
+                        Id = $"{entry.PartitionKey}|{entry.RowKey}",
                         ApiVersion = entry.ApiVersion,
                         Error = entry.Error,
                         HarveyVersion = entry.HarveyVersion,

@@ -9,10 +9,7 @@ export function fetchAnalyses(id, next) {
     const result = await api.fetchAnalyses(client, next, id);
     const map = {};
 
-    result.data.forEach(x => {
-      const id = `${x.partitionKey}|${x.rowKey}`;
-      map[id] = x;
-    });
+    result.data.forEach(x => { map[x.id] = x; });
 
     dispatch({
       type: ANALYSES_RECEIVE,

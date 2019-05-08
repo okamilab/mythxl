@@ -50,7 +50,7 @@ namespace MythXL.Func.Contract
             var analysisParam = (string)req.Query["a"];
             if (!string.IsNullOrEmpty(analysisParam))
             {
-                var analysisFilter = TableQuery.GenerateFilterCondition("AnalyzeStatus", QueryComparisons.Equal, analysisParam);
+                var analysisFilter = TableQuery.GenerateFilterCondition("AnalysisStatus", QueryComparisons.Equal, analysisParam);
                 filter = string.IsNullOrEmpty(filter) ? analysisFilter : TableQuery.CombineFilters(filter, TableOperators.And, analysisFilter);
             }
 
