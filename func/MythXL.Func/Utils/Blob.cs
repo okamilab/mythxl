@@ -32,6 +32,12 @@ namespace MythXL.Func.Utils
             await container.CreateIfNotExistsAsync();
 
             var blockBlob = container.GetBlockBlobReference(blobName);
+            var isExist = await blockBlob.ExistsAsync();
+            if (!isExist)
+            {
+                return string.Empty;
+            }
+
             return await blockBlob.DownloadTextAsync();
         }
     }
