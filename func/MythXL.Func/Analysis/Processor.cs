@@ -53,18 +53,19 @@ namespace MythXL.Func.Analysis
                 {
                     severity = list[0].Issues[0].Severity;
                 }
+
+                await Blob.WriteAsync(
+                    config.GetValue<string>("Storage:Connection"),
+                    config.GetValue<string>("Storage:AnalysisIssuesContainer"),
+                    result.UUID,
+                    issues);
             }
 
-            await Blob.Write(
+            await Blob.WriteAsync(
                 config.GetValue<string>("Storage:Connection"),
                 config.GetValue<string>("Storage:AnalysisContainer"),
                 message.Address,
                 analysis);
-            await Blob.Write(
-                config.GetValue<string>("Storage:Connection"),
-                config.GetValue<string>("Storage:AnalysisIssuesContainer"),
-                result.UUID,
-                issues);
             await InsertAnalysis(analysisTable, message.Address, result);
             await InsertContract(contractTable, message, result, severity);
         }

@@ -8,6 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Func.Entities;
 using MythXL.Func.Utils;
+using System;
+using MythXL.Func.Models;
+using System.Collections.Generic;
 
 namespace MythXL.Func.Analysis
 {
@@ -26,6 +29,44 @@ namespace MythXL.Func.Analysis
                 .AddEnvironmentVariables()
                 .Build();
 
+            try
+            {
+                var segment = await GetAsync(req, table);
+                var list = new List<AnalysisModel>(10);
+                foreach (var entry in segment.Results)
+                {
+                    list.Add(new AnalysisModel
+                    {
+                        ApiVersion = entry.ApiVersion,
+                        Error = entry.Error,
+                        HarveyVersion = entry.HarveyVersion,
+                        MaestroVersion = entry.MaestroVersion,
+                        MaruVersion = entry.MaruVersion,
+                        MythrilVersion = entry.MythrilVersion,
+                        Status = entry.Status,
+                        SubmittedAt = entry.SubmittedAt,
+                        Version = entry.Version,
+                        Issues = await Blob.ReadAsync(
+                            config.GetValue<string>("Storage:Connection"),
+                            config.GetValue<string>("Storage:AnalysisIssuesContainer"),
+                            entry.RowKey)
+                    });
+                }
+
+                return new OkObjectResult(new
+                {
+                    data = list,
+                    next = ContinuationToken.Zip(segment.ContinuationToken)
+                });
+            }
+            catch (Exception ex)
+            {
+                return new BadRequestObjectResult(ex.Message);
+            }
+        }
+
+        private static async Task<TableQuerySegment<AnalysisEntity>> GetAsync(HttpRequest req, CloudTable table)
+        {
             TableContinuationToken token = null;
             var tokenParam = (string)req.Query["t"];
             if (!string.IsNullOrEmpty(tokenParam))
@@ -36,7 +77,7 @@ namespace MythXL.Func.Analysis
             var idParam = (string)req.Query["id"];
             if (string.IsNullOrEmpty(idParam))
             {
-                return new BadRequestObjectResult("id is empty");
+                throw new ArgumentException("id is empty");
             }
 
             var args = idParam.Split('|');
@@ -48,13 +89,7 @@ namespace MythXL.Func.Analysis
                 TakeCount = 10,
                 FilterString = TableQuery.CombineFilters(partKey, TableOperators.And, rowKey)
             };
-            var queryResult = await table.ExecuteQuerySegmentedAsync(query, token);
-
-            return new OkObjectResult(new
-            {
-                data = queryResult.Results,
-                next = ContinuationToken.Zip(queryResult.ContinuationToken)
-            });
+            return await table.ExecuteQuerySegmentedAsync(query, token);
         }
     }
 }

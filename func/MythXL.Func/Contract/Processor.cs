@@ -38,7 +38,7 @@ namespace MythXL.Func.Contract
             var analysis = await policy.AnalyzeAsync(code);
             var response = JsonConvert.DeserializeObject<AnalysisResponse>(analysis);
 
-            await Blob.Write(
+            await Blob.WriteAsync(
                 config.GetValue<string>("Storage:Connection"),
                 config.GetValue<string>("Storage:ContractInputContainer"),
                 message.Address,
