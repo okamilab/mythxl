@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
+using System;
 
 namespace MythXL.Func.Entities
 {
@@ -26,6 +27,9 @@ namespace MythXL.Func.Entities
 
         public string SubmittedBy { get; set; }
 
+        [Obsolete("Deprecated in entity version 1")]
         public string Issues { get; set; }
+
+        public int Version { get; set; }
     }
 }

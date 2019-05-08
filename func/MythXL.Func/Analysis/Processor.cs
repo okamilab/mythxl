@@ -60,26 +60,23 @@ namespace MythXL.Func.Analysis
                 config.GetValue<string>("Storage:AnalysisContainer"),
                 message.Address,
                 analysis);
-            await InsertAnalysis(analysisTable, message.Address, result, issues);
+            await Blob.Write(
+                config.GetValue<string>("Storage:Connection"),
+                config.GetValue<string>("Storage:AnalysisIssuesContainer"),
+                result.UUID,
+                issues);
+            await InsertAnalysis(analysisTable, message.Address, result);
             await InsertContract(contractTable, message, result, severity);
         }
 
         private static Client GetClient(IConfigurationRoot config, AnalysisMessage message)
         {
-            if (message.Version <= 1)
-            {
-                return new Client(
-                    config.GetValue<string>("MythX:BaseUrl"),
-                    config.GetValue<string>("MythX:Address"),
-                    config.GetValue<string>("MythX:Password"));
-            }
-
             var accounts = new AccountManager(config);
             var password = accounts.GetPassword(message.Account);
             return new Client(config.GetValue<string>("MythX:BaseUrl"), message.Account, password);
         }
 
-        private static async Task InsertAnalysis(CloudTable table, string address, AnalysisResult analysis, string issues)
+        private static async Task InsertAnalysis(CloudTable table, string address, AnalysisResult analysis)
         {
             var entry = new AnalysisEntity()
             {
@@ -95,7 +92,7 @@ namespace MythXL.Func.Analysis
                 Status = analysis.Status,
                 SubmittedAt = analysis.SubmittedAt,
                 SubmittedBy = analysis.SubmittedBy,
-                Issues = issues
+                Version = 1
             };
             TableOperation insertOperation = TableOperation.InsertOrReplace(entry);
             await table.ExecuteAsync(insertOperation);
