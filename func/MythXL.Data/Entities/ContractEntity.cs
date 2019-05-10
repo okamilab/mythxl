@@ -1,7 +1,7 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
 using System;
 
-namespace MythXL.Func.Entities
+namespace MythXL.Data.Entities
 {
     public class ContractEntity : TableEntity
     {

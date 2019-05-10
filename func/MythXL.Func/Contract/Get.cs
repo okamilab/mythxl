@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage.Table;
-using MythXL.Func.Entities;
+using MythXL.Data.Entities;
 using MythXL.Func.Utils;
 
 namespace MythXL.Func.Contract

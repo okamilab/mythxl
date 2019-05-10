@@ -1,7 +1,7 @@
 ﻿using CommandLine;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using MythXL.Func.Entities;
+using MythXL.Data.Entities;
 using System;
 
 namespace MythXL.Transform.Commands

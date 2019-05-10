@@ -1,6 +1,6 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
 
-namespace MythXL.Func.Entities
+namespace MythXL.Data.Entities
 {
     public class StateEntity : TableEntity
     {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
-using MythXL.Func.Entities;
+using MythXL.Data.Entities;
 using MythXL.Func.Models;
 using MythXL.Func.MythX;
 using MythXL.Func.Utils;
