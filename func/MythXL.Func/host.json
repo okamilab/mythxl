@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "functions": [ "BlockEnqueuer", "GetContracts", "GetAnalyses", "GetProcessingStat" ],
+  "functions": [ "BlockEnqueuer", "GetContracts", "GetAnalyses", "GetProcessingStat", "ProcessingCollector" ],
   "extensions": {
     "queues": {
       "batchSize": 1,
