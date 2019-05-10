@@ -1,6 +1,6 @@
 ﻿namespace MythXL.Func.Models
 {
-    public class AnalysisResult
+    public class Analysis
     {
         public string ApiVersion { get; set; }
 

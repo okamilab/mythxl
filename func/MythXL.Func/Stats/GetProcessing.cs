@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
 using MythXL.Data.Entities;
-using System.Linq;
-using MythXL.Func.Models;
+using MythXL.Data.Domain;
+using MythXL.Func.ViewModels;
 
 namespace MythXL.Func.Contract
 {
@@ -16,27 +16,45 @@ namespace MythXL.Func.Contract
         [FunctionName("GetProcessingStat")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v0.1/stats/processing")] HttpRequest req,
-            [Table("%Storage:ProcessingStatTable%", Connection = "Storage:Connection")] CloudTable table,
+            [Table("%Storage:StatTable%", Connection = "Storage:Connection")] CloudTable table,
             ILogger log)
         {
-            var query = new TableQuery<ProcessingStatEntity> { TakeCount = 1 };
-            var queryResult = await table.ExecuteQuerySegmentedAsync(query, null);
-            var stat = queryResult.Results.FirstOrDefault();
-            if (stat == null)
+            var partKey = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "ProcessingStat");
+            var query = new TableQuery<StatEntity> { FilterString = partKey };
+            var segment = await table.ExecuteQuerySegmentedAsync(query, null);
+
+            var model = new ProcessingStatModel();
+            foreach (var entry in segment.Results)
             {
-                return new BadRequestResult();
+                switch (entry.RowKey)
+                {
+                    case nameof(ProcessingStatFields.Processed):
+                        model.Processed = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.Failed):
+                        model.Failed = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.Finished):
+                        model.Finished = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.HighSeverity):
+                        model.HighSeverity = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.LowSeverity):
+                        model.LowSeverity = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.MediumSeverity):
+                        model.MediumSeverity = entry.Count;
+                        break;
+                    case nameof(ProcessingStatFields.NoIssues):
+                        model.NoIssues = entry.Count;
+                        break;
+                    default:
+                        break;
+                }
             }
 
-            return new OkObjectResult(new ProcessingStatModel
-            {
-                Count = stat.Count,
-                Errors = stat.Errors,
-                Finished = stat.Finished,
-                HighSeverity = stat.HighSeverity,
-                LowSeverity = stat.LowSeverity,
-                MediumSeverity = stat.MediumSeverity,
-                NoSeverity = stat.NoSeverity
-            });
+            return new OkObjectResult(model);
         }
     }
 }

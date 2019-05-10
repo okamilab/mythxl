@@ -32,6 +32,7 @@ namespace MythXL.Func.Block
             var state = await stateManager.GetValueAsync(lastBlockKey);
             var lastBlock = int.Parse(state.Value);
 
+            // TODO check head block
             var batchSize = 100;
             for (var i = 0; i < batchSize; i++)
             {

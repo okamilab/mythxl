@@ -1,4 +1,4 @@
-﻿namespace MythXL.Func.Models
+﻿namespace MythXL.Func.ViewModels
 {
     public class AnalysisModel
     {

@@ -2,9 +2,9 @@
 using System;
 using System.Threading.Tasks;
 
-namespace MythXL.Func.Utils
+namespace MythXL.Data
 {
-    internal static class Blob
+    public static class Blob
     {
         public static async Task WriteAsync(string connection, string containerName, string blobName, string content)
         {

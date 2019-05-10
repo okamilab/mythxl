@@ -7,9 +7,12 @@ namespace MythXL.Jobs
     {
         static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<CollectProcessingStatOptions>(args)
+            Parser.Default.ParseArguments<
+                CollectProcessingStatOptions,
+                CollectIssuesStatOptions>(args)
                 .MapResult(
                     (CollectProcessingStatOptions opts) => CollectProcessingStat.RunAddAndReturnExitCode(opts),
+                    (CollectIssuesStatOptions opts) => CollectIssuesStat.RunAddAndReturnExitCode(opts),
                     errs => 1);
         }
     }

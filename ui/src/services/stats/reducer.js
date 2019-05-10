@@ -1,27 +1,55 @@
 import {
-  PROCESSING_STATS_REQUEST,
-  PROCESSING_STATS_RECEIVE
+  PROCESSING_STAT_REQUEST,
+  PROCESSING_STAT_RECEIVE,
+  ISSUES_STAT_REQUEST,
+  ISSUES_STAT_RECEIVE
 } from './actions';
 
 export const initialState = {
-  isFetching: false,
-  didInvalidate: true,
-  data: {}
+  processing: {
+    isFetching: false,
+    didInvalidate: true,
+    data: {}
+  },
+  issues: {
+    isFetching: false,
+    didInvalidate: true,
+    data: []
+  }
 };
 
 export default function reduce(state = initialState, action) {
   switch (action.type) {
-    case PROCESSING_STATS_REQUEST:
+    case PROCESSING_STAT_REQUEST:
       return Object.assign({}, state, {
-        isFetching: true,
-        didInvalidate: false
+        processing: {
+          isFetching: true,
+          didInvalidate: false
+        }
       });
-    case PROCESSING_STATS_RECEIVE:
+    case PROCESSING_STAT_RECEIVE:
       return Object.assign({}, state, {
-        isFetching: false,
-        didInvalidate: false,
-        data: action.data
+        processing: {
+          isFetching: false,
+          didInvalidate: false,
+          data: action.data
+        }
       });
+      case ISSUES_STAT_REQUEST:
+        return Object.assign({}, state, {
+          issues: {
+            isFetching: true,
+            didInvalidate: false
+          }
+        });
+      case ISSUES_STAT_RECEIVE:
+        return Object.assign({}, state, {
+          issues: {
+            isFetching: false,
+            didInvalidate: false,
+            data: action.data
+          }
+        });
     default:
       return state;
   }

@@ -3,10 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
+using MythXL.Data;
+using MythXL.Data.Domain;
 using MythXL.Data.Entities;
 using MythXL.Func.Models;
 using MythXL.Func.MythX;
-using MythXL.Func.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -32,9 +33,9 @@ namespace MythXL.Func.Analysis
                 .Build();
 
             var client = GetClient(config, message);
-            var analysis = await client.GetAnalysisAsync(message.AnalysisId);
-            var result = JsonConvert.DeserializeObject<AnalysisResult>(analysis);
-            if (result.Status != "Error" && result.Status != "Finished")
+            var response = await client.GetAnalysisAsync(message.AnalysisId);
+            var analysis = JsonConvert.DeserializeObject<Models.Analysis>(response);
+            if (analysis.Status != "Error" && analysis.Status != "Finished")
             {
                 string msg = JsonConvert.SerializeObject(message);
                 var visibilityDelay = TimeSpan.FromMinutes(4);
@@ -44,11 +45,11 @@ namespace MythXL.Func.Analysis
 
             string issues = null;
             string severity = null;
-            if (result.Status == "Finished")
+            if (analysis.Status == "Finished")
             {
-                issues = await client.GetIssuesAsync(result.UUID);
+                issues = await client.GetIssuesAsync(analysis.UUID);
 
-                var list = JsonConvert.DeserializeObject<List<AnalysisIssueResult>>(issues);
+                var list = JsonConvert.DeserializeObject<List<AnalysisResult>>(issues);
                 if (list.Count > 0 && list[0] != null && list[0].Issues != null && list[0].Issues.Count > 0)
                 {
                     severity = list[0].Issues[0].Severity;
@@ -57,7 +58,7 @@ namespace MythXL.Func.Analysis
                 await Blob.WriteAsync(
                     config.GetValue<string>("Storage:Connection"),
                     config.GetValue<string>("Storage:AnalysisIssuesContainer"),
-                    result.UUID,
+                    analysis.UUID,
                     issues);
             }
 
@@ -65,9 +66,9 @@ namespace MythXL.Func.Analysis
                 config.GetValue<string>("Storage:Connection"),
                 config.GetValue<string>("Storage:AnalysisContainer"),
                 message.Address,
-                analysis);
-            await InsertAnalysis(analysisTable, message.Address, result);
-            await InsertContract(contractTable, message, result, severity);
+                response);
+            await InsertAnalysis(analysisTable, message.Address, analysis);
+            await InsertContract(contractTable, message, analysis, severity);
         }
 
         private static Client GetClient(IConfigurationRoot config, AnalysisMessage message)
@@ -77,7 +78,7 @@ namespace MythXL.Func.Analysis
             return new Client(config.GetValue<string>("MythX:BaseUrl"), message.Account, password);
         }
 
-        private static async Task InsertAnalysis(CloudTable table, string address, AnalysisResult analysis)
+        private static async Task InsertAnalysis(CloudTable table, string address, Models.Analysis analysis)
         {
             var entry = new AnalysisEntity()
             {
@@ -100,7 +101,7 @@ namespace MythXL.Func.Analysis
             await table.ExecuteAsync(insertOperation);
         }
 
-        private static async Task InsertContract(CloudTable table, AnalysisMessage message, AnalysisResult analysis, string severity)
+        private static async Task InsertContract(CloudTable table, AnalysisMessage message, Models.Analysis analysis, string severity)
         {
             var entry = new ContractEntity()
             {

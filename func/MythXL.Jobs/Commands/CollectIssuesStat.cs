@@ -1,21 +1,27 @@
 ﻿using CommandLine;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
+using MythXL.Data;
 using MythXL.Data.Domain;
 using MythXL.Data.Entities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MythXL.Jobs.Commands
 {
-    [Verb("collect-processing-stat", HelpText = "Collects processing statistics.")]
-    public class CollectProcessingStatOptions
+    [Verb("collect-issues-stat", HelpText = "Collects issues statistics.")]
+    public class CollectIssuesStatOptions
     {
         [Option('c', "connection-string", Required = true, HelpText = "Connection string to Azure Storage.")]
         public string Connection { get; set; }
 
         [Option('t', "contract-table-name", Required = true, HelpText = "Contract table.")]
-        public string TableName { get; set; }
+        public string ContractTableName { get; set; }
+
+        [Option('a', "analysis-blob-container", Required = true, HelpText = "Analysis blob container.")]
+        public string AnalysisBlobContainerName { get; set; }
 
         [Option('s', "stat-table-name", Required = true, HelpText = "Stat table.")]
         public string StatTableName { get; set; }
@@ -24,57 +30,46 @@ namespace MythXL.Jobs.Commands
         public int BatchSize { get; set; }
     }
 
-    public class CollectProcessingStat
+    public class CollectIssuesStat
     {
-        public static int RunAddAndReturnExitCode(CollectProcessingStatOptions options)
+        public static int RunAddAndReturnExitCode(CollectIssuesStatOptions options)
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(options.Connection);
             var tableClient = storageAccount.CreateCloudTableClient();
-            var sourceTable = tableClient.GetTableReference(options.TableName);
+            var contractTable = tableClient.GetTableReference(options.ContractTableName);
 
-            var stat = new Dictionary<ProcessingStatFields, long>
-            {
-                { ProcessingStatFields.Processed, 0},
-                { ProcessingStatFields.Failed, 0},
-                { ProcessingStatFields.Finished, 0},
-                { ProcessingStatFields.LowSeverity, 0},
-                { ProcessingStatFields.MediumSeverity, 0},
-                { ProcessingStatFields.HighSeverity, 0},
-                { ProcessingStatFields.NoIssues, 0},
-            };
+            var stat = new Dictionary<string, long>();
 
             TableContinuationToken token = null;
             do
             {
                 var query = new TableQuery<ContractEntity> { TakeCount = options.BatchSize };
-                var segment = sourceTable.ExecuteQuerySegmentedAsync(query, token).Result;
+                var segment = contractTable.ExecuteQuerySegmentedAsync(query, token).Result;
 
                 foreach (var entry in segment.Results)
                 {
-                    stat[ProcessingStatFields.Processed] += 1;
-                    if (entry.AnalysisStatus == "Error")
+                    if (entry.AnalysisStatus != "Finished")
                     {
-                        stat[ProcessingStatFields.Failed] += 1;
-                    }
-                    else
-                    {
-                        stat[ProcessingStatFields.Finished] += 1;
+                        continue;
                     }
 
-                    switch (entry.Severity)
+                    var content = Blob.ReadAsync(options.Connection, options.AnalysisBlobContainerName, entry.AnalysisId).Result;
+                    if (string.IsNullOrEmpty(content))
                     {
-                        case "Low":
-                            stat[ProcessingStatFields.LowSeverity] += 1;
-                            break;
-                        case "Medium":
-                            stat[ProcessingStatFields.MediumSeverity] += 1;
-                            break;
-                        case "High":
-                            stat[ProcessingStatFields.HighSeverity] += 1;
-                            break;
-                        default:
-                            stat[ProcessingStatFields.NoIssues] += 1;
-                            break;
+                        continue;
+                    }
+
+                    var list = JsonConvert.DeserializeObject<List<AnalysisResult>>(content);
+                    foreach (var issue in list.SelectMany(x => x.Issues))
+                    {
+                        if (!stat.Keys.Contains(issue.SwcID))
+                        {
+                            stat.Add(issue.SwcID, 1);
+                        }
+                        else
+                        {
+                            stat[issue.SwcID] += 1;
+                        }
                     }
                 }
 
@@ -88,8 +83,8 @@ namespace MythXL.Jobs.Commands
             {
                 var entry = new StatEntity
                 {
-                    PartitionKey = "ProcessingStat",
-                    RowKey = key.ToString(),
+                    PartitionKey = "IssueStat",
+                    RowKey = key,
                     Count = stat[key]
                 };
                 batchOperation.InsertOrReplace(entry);

@@ -8,9 +8,10 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
+import BubbleChart from '@weknow/react-bubble-chart-d3';
 
 import Loader from './../../../components/Loader';
-import { fetchProcessingStats } from './../actions';
+import { fetchProcessingStat, fetchIssuesStat } from './../actions';
 
 const styles = theme => ({
   root: {
@@ -26,13 +27,15 @@ const styles = theme => ({
 
 class Stats extends React.Component {
   render() {
-    const { isFetching, data, classes } = this.props;
+    const { processing, issues, classes } = this.props;
 
-    console.log(data);
-
-    if (isFetching) {
+    if (processing.isFetching || issues.isFetching) {
       return <Loader />
     }
+
+    const issuesData = issues.data.map(x => {
+      return { label: x.key, value: x.value }
+    })
 
     return (
       <>
@@ -45,19 +48,19 @@ class Stats extends React.Component {
               <Typography variant="subtitle1" noWrap>Processed</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.count}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.processed}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="subtitle1" noWrap>Finished</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.finished}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.finished}</Typography>
             </Grid>
             <Grid item xs={4}>
-              <Typography variant="subtitle1" noWrap>Errors</Typography>
+              <Typography variant="subtitle1" noWrap>Failed</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.errors}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.failed}</Typography>
             </Grid>
             <Grid item xs={12}>
               <Divider />
@@ -66,27 +69,62 @@ class Stats extends React.Component {
               <Typography variant="subtitle1" noWrap>No Issues</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.noSeverity}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.noIssues}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="subtitle1" noWrap>Low severity</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.lowSeverity}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.lowSeverity}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="subtitle1" noWrap>Medium severity</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.mediumSeverity}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.mediumSeverity}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="subtitle1" noWrap>High severity</Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="subtitle1" noWrap>{data.highSeverity}</Typography>
+              <Typography variant="subtitle1" noWrap>{processing.data.highSeverity}</Typography>
             </Grid>
           </Grid>
+        </Paper>
+        <Paper className={classes.root} elevation={2}>
+          <Typography variant="h5" component="h3">
+            Issues
+          </Typography>
+          <BubbleChart
+            graph={{
+              zoom: 1,
+              offsetX: 0,
+              offsetY: 0
+            }}
+            width={950}
+            height={750}
+            showLegend={true}
+            legendPercentage={10}
+            legendFont={{
+              family: 'Arial',
+              size: 12,
+              color: '#000',
+              weight: 'bold',
+            }}
+            valueFont={{
+              family: 'Arial',
+              size: 12,
+              color: '#333',
+              weight: 'bold',
+            }}
+            labelFont={{
+              family: 'Arial',
+              size: 16,
+              color: '#fff',
+              weight: 'bold',
+            }}
+            data={issuesData}
+          />
         </Paper>
       </>
     );
@@ -97,19 +135,29 @@ Stats.propTypes = {
   dispatch: PropTypes.func.isRequired,
   location: PropTypes.object,
   classes: PropTypes.object.isRequired,
-  data: PropTypes.object.isRequired
+  processing: PropTypes.object,
+  issues: PropTypes.object
 };
 
 export default compose(
   connect(state => {
-    const { isFetching, data } = state.stats || {
-      isFetching: true,
-      data: {}
+    const { processing, issues } = state.stats || {
+      processing: {
+        isFetching: true,
+        data: {}
+      },
+      issues: {
+        isFetching: true,
+        data: []
+      }
     };
-    return { isFetching, data };
+    return { processing, issues };
   }),
   withJob({
-    work: ({ dispatch }) => dispatch(fetchProcessingStats()),
+    work: ({ dispatch }) => {
+      dispatch(fetchProcessingStat())
+      dispatch(fetchIssuesStat())
+    },
     LoadingComponent: () => <div>Loading...</div>,
     error: function Error() { return <p>Error</p>; },
   }),

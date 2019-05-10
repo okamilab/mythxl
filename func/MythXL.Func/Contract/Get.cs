@@ -57,6 +57,7 @@ namespace MythXL.Func.Contract
             var query = new TableQuery<ContractEntity> { TakeCount = 10, FilterString = filter };
             var queryResult = await table.ExecuteQuerySegmentedAsync(query, token);
 
+            // TODO use view model instead of entity from storage
             return new OkObjectResult(new
             {
                 data = queryResult.Results,

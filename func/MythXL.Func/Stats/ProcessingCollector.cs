@@ -2,7 +2,9 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
+using MythXL.Data.Domain;
 using MythXL.Data.Entities;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MythXL.Func.Stats
@@ -13,7 +15,7 @@ namespace MythXL.Func.Stats
         public static async Task Run(
             [TimerTrigger("0 0 0 * * *")]TimerInfo timer,
             [Table("%Storage:ContractTable%", Connection = "Storage:Connection")] CloudTable contractTable,
-            [Table("%Storage:ProcessingStatTable%", Connection = "Storage:Connection")] CloudTable statTable,
+            [Table("%Storage:StatTable%", Connection = "Storage:Connection")] CloudTable statTable,
             ILogger log,
             ExecutionContext context)
         {
@@ -23,17 +25,15 @@ namespace MythXL.Func.Stats
                 .AddEnvironmentVariables()
                 .Build();
 
-            var stat = new ProcessingStatEntity()
+            var stat = new Dictionary<ProcessingStatFields, long>
             {
-                PartitionKey = "stat",
-                RowKey = "",
-                Count = 0,
-                Finished = 0,
-                Errors = 0,
-                NoSeverity = 0,
-                LowSeverity = 0,
-                MediumSeverity = 0,
-                HighSeverity = 0,
+                { ProcessingStatFields.Processed, 0},
+                { ProcessingStatFields.Failed, 0},
+                { ProcessingStatFields.Finished, 0},
+                { ProcessingStatFields.LowSeverity, 0},
+                { ProcessingStatFields.MediumSeverity, 0},
+                { ProcessingStatFields.HighSeverity, 0},
+                { ProcessingStatFields.NoIssues, 0},
             };
 
             TableContinuationToken token = null;
@@ -44,29 +44,29 @@ namespace MythXL.Func.Stats
 
                 foreach (var entry in segment.Results)
                 {
-                    stat.Count += 1;
+                    stat[ProcessingStatFields.Processed] += 1;
                     if (entry.AnalysisStatus == "Error")
                     {
-                        stat.Errors += 1;
+                        stat[ProcessingStatFields.Failed] += 1;
                     }
                     else
                     {
-                        stat.Finished += 1;
+                        stat[ProcessingStatFields.Finished] += 1;
                     }
 
                     switch (entry.Severity)
                     {
                         case "Low":
-                            stat.LowSeverity += 1;
+                            stat[ProcessingStatFields.LowSeverity] += 1;
                             break;
                         case "Medium":
-                            stat.MediumSeverity += 1;
+                            stat[ProcessingStatFields.MediumSeverity] += 1;
                             break;
                         case "High":
-                            stat.HighSeverity += 1;
+                            stat[ProcessingStatFields.HighSeverity] += 1;
                             break;
                         default:
-                            stat.NoSeverity += 1;
+                            stat[ProcessingStatFields.NoIssues] += 1;
                             break;
                     }
                 }
@@ -74,8 +74,19 @@ namespace MythXL.Func.Stats
                 token = segment.ContinuationToken;
             } while (token != null);
 
-            TableOperation insertOperation = TableOperation.InsertOrReplace(stat);
-            await statTable.ExecuteAsync(insertOperation);
+            var batchOperation = new TableBatchOperation();
+            foreach (var key in stat.Keys)
+            {
+                var entry = new StatEntity
+                {
+                    PartitionKey = "ProcessingStat",
+                    RowKey = key.ToString(),
+                    Count = stat[key]
+                };
+                batchOperation.InsertOrReplace(entry);
+            }
+
+            await statTable.ExecuteBatchAsync(batchOperation);
         }
     }
 }

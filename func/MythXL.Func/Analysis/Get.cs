@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -6,11 +8,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage.Table;
+using MythXL.Data;
 using MythXL.Data.Entities;
+using MythXL.Func.ViewModels;
 using MythXL.Func.Utils;
-using System;
-using MythXL.Func.Models;
-using System.Collections.Generic;
 
 namespace MythXL.Func.Analysis
 {
