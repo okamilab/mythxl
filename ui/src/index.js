@@ -18,16 +18,16 @@ let client = createClient();
 const store = configureStore({}, client);
 
 ReactDOM.render(
-    <AppContainer>
-      <Router>
-        <HelmetProvider>
-          <Provider store={store}>
-            <App />
-          </Provider>
-        </HelmetProvider>
-      </Router>
-    </AppContainer>,
-    document.getElementById('root'));
+  <AppContainer>
+    <Router>
+      <HelmetProvider>
+        <Provider store={store}>
+          <App />
+        </Provider>
+      </HelmetProvider>
+    </Router>
+  </AppContainer>,
+  document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

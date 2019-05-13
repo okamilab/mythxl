@@ -8,7 +8,7 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
-import BubbleChart from '@weknow/react-bubble-chart-d3';
+import { Chart } from "react-google-charts";
 
 import Loader from './../../../components/Loader';
 import { fetchProcessingStat, fetchIssuesStat } from './../actions';
@@ -33,9 +33,18 @@ class Stats extends React.Component {
       return <Loader />
     }
 
-    const issuesData = issues.data.map(x => {
-      return { label: x.key, value: x.value }
-    })
+    const data = [["Key", "Value"]];
+    issues.data.sort((a, b) => {
+      if (a.value < b.value) {
+        return 1;
+      }
+      if (a.value > b.value) {
+        return -1;
+      }
+      return 0;
+    }).forEach(i => {
+      data.push([i.key, i.value])
+    });;
 
     return (
       <>
@@ -95,35 +104,15 @@ class Stats extends React.Component {
           <Typography variant="h5" component="h3">
             Issues
           </Typography>
-          <BubbleChart
-            graph={{
-              zoom: 1,
-              offsetX: 0,
-              offsetY: 0
+          <Chart
+            width={'100%'}
+            height={'500px'}
+            chartType="PieChart"
+            data={data}
+            options={{
+              pieHole: 0.4,
+              sliceVisibilityThreshold: 0
             }}
-            width={950}
-            height={750}
-            showLegend={true}
-            legendPercentage={10}
-            legendFont={{
-              family: 'Arial',
-              size: 12,
-              color: '#000',
-              weight: 'bold',
-            }}
-            valueFont={{
-              family: 'Arial',
-              size: 12,
-              color: '#333',
-              weight: 'bold',
-            }}
-            labelFont={{
-              family: 'Arial',
-              size: 16,
-              color: '#fff',
-              weight: 'bold',
-            }}
-            data={issuesData}
           />
         </Paper>
       </>
