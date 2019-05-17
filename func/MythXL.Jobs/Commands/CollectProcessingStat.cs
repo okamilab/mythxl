@@ -43,6 +43,8 @@ namespace MythXL.Jobs.Commands
                 { ProcessingStatFields.NoIssues, 0},
             };
 
+            var counter = 0;
+
             TableContinuationToken token = null;
             do
             {
@@ -78,7 +80,8 @@ namespace MythXL.Jobs.Commands
                     }
                 }
 
-                Console.WriteLine($"Handled {segment.Results.Count} records");
+                counter += segment.Results.Count;
+                Console.WriteLine($"Handled {counter} records");
 
                 token = segment.ContinuationToken;
             } while (token != null);

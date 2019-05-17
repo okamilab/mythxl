@@ -25,7 +25,7 @@ function shouldFetchContracts(state) {
 
 export function fetchContracts(next, filter) {
   return async (dispatch, _, client) => {
-    dispatch({ type: CONTRACTS_REQUEST });
+    dispatch({ type: CONTRACTS_REQUEST, isFiltered: !!filter });
     const result = await api.fetchContracts(client, next, filter);
     dispatch({
       type: CONTRACTS_RECEIVE,
@@ -35,8 +35,19 @@ export function fetchContracts(next, filter) {
   };
 }
 
-export function invalidateContracts() {
-  return {
-    type: CONTRACTS_INVALIDATE,
+export function fetchContract(id) {
+  return async (dispatch, _, client) => {
+    dispatch({ type: CONTRACTS_REQUEST });
+    const result = await api.fetchContracts(client, null, `q=${id}`);
+    dispatch({
+      type: CONTRACTS_RECEIVE,
+      items: result.data,
+      invalidate: true
+    });
+    return result;
   };
+}
+
+export function invalidateContracts() {
+  return { type: CONTRACTS_INVALIDATE };
 }

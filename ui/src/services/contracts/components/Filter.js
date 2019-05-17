@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from 'prop-types';
+import { compose } from 'redux';
 import { connect } from "react-redux";
 import { withRouter } from 'react-router';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -60,7 +61,7 @@ class Filter extends React.Component {
 
   render() {
     const { anchorEl } = this.state;
-    const { classes, history, dispatch, match } = this.props;
+    const { classes, history, dispatch, isFiltered } = this.props;
     const isMenuOpen = Boolean(anchorEl);
 
     return (
@@ -87,7 +88,7 @@ class Filter extends React.Component {
             <FilterList />
           </IconButton>
         </Tooltip>
-        {match.params.filter ?
+        {isFiltered ?
           <Tooltip title="Clean filter">
             <IconButton
               color="inherit"
@@ -134,9 +135,14 @@ class Filter extends React.Component {
 
 Filter.propTypes = {
   dispatch: PropTypes.func.isRequired,
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
+  isFiltered: PropTypes.bool
 };
 
-export default withRouter(
-  connect()(withStyles(styles)(Filter))
-);
+export default compose(
+  connect(state => {
+    const { isFiltered } = state.contracts || { isFiltered: false };
+    return { isFiltered };
+  }),
+  withStyles(styles)
+)(withRouter(Filter));

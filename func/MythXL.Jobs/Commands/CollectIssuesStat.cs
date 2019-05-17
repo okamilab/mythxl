@@ -38,6 +38,7 @@ namespace MythXL.Jobs.Commands
             var tableClient = storageAccount.CreateCloudTableClient();
             var contractTable = tableClient.GetTableReference(options.ContractTableName);
 
+            var counter = 0;
             var stat = new Dictionary<string, long>();
 
             TableContinuationToken token = null;
@@ -73,7 +74,8 @@ namespace MythXL.Jobs.Commands
                     }
                 }
 
-                Console.WriteLine($"Handled {segment.Results.Count} records");
+                counter += segment.Results.Count;
+                Console.WriteLine($"Handled {counter} records");
 
                 token = segment.ContinuationToken;
             } while (token != null);
