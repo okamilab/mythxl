@@ -6,8 +6,10 @@ using MythXL.Data.Domain;
 using MythXL.Data.Entities;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MythXL.Jobs.Commands
 {
@@ -39,7 +41,7 @@ namespace MythXL.Jobs.Commands
             var contractTable = tableClient.GetTableReference(options.ContractTableName);
 
             var counter = 0;
-            var stat = new Dictionary<string, long>();
+            var stat = new ConcurrentDictionary<string, long>();
 
             TableContinuationToken token = null;
             do
@@ -47,35 +49,28 @@ namespace MythXL.Jobs.Commands
                 var query = new TableQuery<ContractEntity> { TakeCount = options.BatchSize };
                 var segment = contractTable.ExecuteQuerySegmentedAsync(query, token).Result;
 
-                foreach (var entry in segment.Results)
+                Parallel.ForEach(segment.Results, entry =>
                 {
                     if (entry.AnalysisStatus != "Finished")
                     {
-                        continue;
+                        return;
                     }
 
                     var content = Blob.ReadAsync(options.Connection, options.AnalysisBlobContainerName, entry.AnalysisId).Result;
                     if (string.IsNullOrEmpty(content))
                     {
-                        continue;
+                        return;
                     }
 
                     var list = JsonConvert.DeserializeObject<List<AnalysisResult>>(content);
                     foreach (var issue in list.SelectMany(x => x.Issues))
                     {
-                        if (!stat.Keys.Contains(issue.SwcID))
-                        {
-                            stat.Add(issue.SwcID, 1);
-                        }
-                        else
-                        {
-                            stat[issue.SwcID] += 1;
-                        }
+                        stat.AddOrUpdate(issue.SwcID, 1, (key, oldValue) => oldValue + 1);
                     }
-                }
+                });
 
                 counter += segment.Results.Count;
-                Console.WriteLine($"Handled {counter} records");
+                Console.WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fffffff ")} Handled {counter} records");
 
                 token = segment.ContinuationToken;
             } while (token != null);
