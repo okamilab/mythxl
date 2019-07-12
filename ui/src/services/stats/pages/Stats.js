@@ -44,7 +44,7 @@ class Stats extends React.Component {
       return 0;
     }).forEach(i => {
       data.push([i.key, i.value])
-    });;
+    });
 
     return (
       <>
