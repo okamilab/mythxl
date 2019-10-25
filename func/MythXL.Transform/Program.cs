@@ -11,12 +11,14 @@ namespace MythXL.Transform
                 AzureTableEntryMoveOptions,
                 MigrateContractV1Options,
                 MigrateAnalysisV1Options,
-                AnalysisVersionsFixOptions>(args)
+                AnalysisVersionsFixOptions,
+                ResetContractOptions>(args)
                 .MapResult(
                     (AzureTableEntryMoveOptions opts) => AzureTableEntryMove.RunAddAndReturnExitCode(opts),
                     (MigrateContractV1Options opts) => MigrateContractV1.RunAddAndReturnExitCode(opts),
                     (MigrateAnalysisV1Options opts) => MigrateAnalysisV1.RunAddAndReturnExitCode(opts),
                     (AnalysisVersionsFixOptions opts) => AnalysisVersionsFix.RunAddAndReturnExitCode(opts),
+                    (ResetContractOptions opts) => ResetContract.RunAddAndReturnExitCode(opts),
                     errs => 1);
         }
     }

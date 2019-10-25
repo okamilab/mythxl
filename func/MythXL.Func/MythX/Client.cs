@@ -10,7 +10,7 @@ namespace MythXL.Func.MythX
     public class Client
     {
         internal readonly HttpClient _client;
-        private string _address;
+        private readonly string _address;
 
         public Client(string baseUrl, string address, string pwd)
         {
